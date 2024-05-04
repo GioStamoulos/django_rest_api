@@ -28,5 +28,5 @@ router.register('comments', CommentViewSet)
 
 urlpatterns = [
     path('', include(router.urls)), 
-    path('articles/download/', download_articles_csv, name='download_articles_csv'),
+    path('articles/download', download_articles_csv, name='download_articles_csv'),
 ]
