@@ -17,8 +17,16 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from articles.views import (AuthorViewSet, TagViewSet, ArticleViewSet, CommentViewSet, download_articles_csv)
+
+
+router = DefaultRouter()
+router.register('authors', AuthorViewSet)
+router.register('tags', TagViewSet)
+router.register('articles', ArticleViewSet)
+router.register('comments', CommentViewSet)
 
 urlpatterns = [
-      path('admin/', admin.site.urls),
-      path('', include('articles.urls')),
+    path('', include(router.urls)), 
+    path('articles/download/', download_articles_csv, name='download_articles_csv'),
 ]
