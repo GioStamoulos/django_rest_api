@@ -3,6 +3,7 @@
 from articles.models import Author, Tag, Article, Comment
 from .serializers import AuthorSerializer, TagSerializer, ArticleSerializer, CommentSerializer
 from rest_framework import viewsets
+from rest_framework.views import APIView
 from rest_framework import filters
 from rest_framework.pagination import PageNumberPagination
 from django_filters import rest_framework as django_filters
@@ -52,43 +53,40 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
 
+class ArticleExport(ArticleViewSet):
+    def list(self, request):
+        year = request.query_params.get('year')
+        month = request.query_params.get('month')
+        authors = request.query_params.getlist('authors')
+        tags = request.query_params.getlist('tags')
+        keywords = request.query_params.get('keywords')
 
+        queryset = Article.objects.all()
+        if year:
+            queryset = queryset.filter(publication_date__year=year)
+        if month:
+            queryset = queryset.filter(publication_date__month=month)
+        if authors:
+            queryset = queryset.filter(authors__name__in=authors)
+        if tags:
+            queryset = queryset.filter(tags__name__in=tags)
+        if keywords:
+            queryset = queryset.filter(title__icontains=keywords) | queryset.filter(abstract__icontains=keywords)
 
-@api_view(['GET'])
-def download_articles_csv(request):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = 'attachment; filename="articles.csv"'
+        writer = csv.writer(response)
+        writer.writerow(['Title', 'Abstract', 'Publication Date', 'Authors', 'Tags'])
+        for article in queryset:
+            writer.writerow([
+                article.title,
+                article.abstract,
+                article.publication_date,
+                ', '.join([author.name for author in article.authors.all()]),
+                ', '.join([tag.name for tag in article.tags.all()])
+            ])
 
-    year = request.query_params.get('year')
-    month = request.query_params.get('month')
-    authors = request.query_params.getlist('authors')
-    tags = request.query_params.getlist('tags')
-    keywords = request.query_params.get('keywords')
-
-    queryset = Article.objects.all()
-    if year:
-        queryset = queryset.filter(publication_date__year=year)
-    if month:
-        queryset = queryset.filter(publication_date__month=month)
-    if authors:
-        queryset = queryset.filter(authors__name__in=authors)
-    if tags:
-        queryset = queryset.filter(tags__name__in=tags)
-    if keywords:
-        queryset = queryset.filter(title__icontains=keywords) | queryset.filter(abstract__icontains=keywords)
-
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="articles.csv"'
-    writer = csv.writer(response)
-    writer.writerow(['Title', 'Abstract', 'Publication Date', 'Authors', 'Tags'])
-    for article in queryset:
-        writer.writerow([
-            article.title,
-            article.abstract,
-            article.publication_date,
-            ', '.join([author.name for author in article.authors.all()]),
-            ', '.join([tag.name for tag in article.tags.all()])
-        ])
-
-    return response
+        return response 
 
 
 @api_view(['PUT', 'DELETE'])
