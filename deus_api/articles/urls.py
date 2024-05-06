@@ -25,7 +25,7 @@ router.register('authors', AuthorViewSet)
 router.register('tags', TagViewSet)
 router.register('articles', ArticleViewSet)
 router.register('comments', CommentViewSet)
-router.register('articles-download', ArticleExport, basename='article-export')  
+router.register('articles//download', ArticleExport, basename='article-export')  
 
 
 urlpatterns = [

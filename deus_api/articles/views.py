@@ -1,5 +1,3 @@
-# views.py
-
 from articles.models import Author, Tag, Article, Comment
 from .serializers import AuthorSerializer, TagSerializer, ArticleSerializer, CommentSerializer
 from rest_framework import viewsets
@@ -11,7 +9,7 @@ import csv
 from django.http import HttpResponse
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from rest_framework import status
+from rest_framework import status, permissions
 from rest_framework.response import Response
 
 
@@ -42,12 +40,33 @@ class CustomPagination(PageNumberPagination):
     page_size = 100
     page_size_query_param = 'page_size'
 
+class ArticleOwnerAuthenticator(permissions.BasePermission):
+    def has_object_permission(self, request, view, obj):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        
+        return obj.user_id == request.user
+
 class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
+    permission_classes_by_action = {
+        'create': [permissions.AllowAny], 
+        'retrieve': [permissions.AllowAny],
+        'update': [ArticleOwnerAuthenticator],            # Only owners can update
+        'partial_update': [ArticleOwnerAuthenticator],    # Only owners can partially update
+        'destroy': [ArticleOwnerAuthenticator],           # Only owners can delete
+    }
+
     filter_backends = [filters.OrderingFilter, django_filters.DjangoFilterBackend]
     filterset_class = ArticleFilter
     pagination_class = CustomPagination
+
+    def get_permissions(self):
+        try:
+            return [permission() for permission in self.permission_classes_by_action[self.action]]
+        except KeyError:
+            return [permission() for permission in self.permission_classes_by_action['create']]
 
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
@@ -146,7 +165,7 @@ def comment_detail(request, comment_id):
     except Comment.DoesNotExist:
         return Response(status=status.HTTP_404_NOT_FOUND)
 
-    # Check if the requesting user is the owner of the comment
+    #    Check if the requesting user is the owner of the comment
     if comment.user != request.user:
         return Response({"message": "You are not authorized to perform this action."}, status=status.HTTP_403_FORBIDDEN)
 
