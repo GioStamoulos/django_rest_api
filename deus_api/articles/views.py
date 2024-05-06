@@ -53,9 +53,9 @@ class ArticleViewSet(viewsets.ModelViewSet):
     permission_classes_by_action = {
         'create': [permissions.AllowAny], 
         'retrieve': [permissions.AllowAny],
-        'update': [ArticleOwnerAuthenticator],            # Only owners can update
-        'partial_update': [ArticleOwnerAuthenticator],    # Only owners can partially update
-        'destroy': [ArticleOwnerAuthenticator],           # Only owners can delete
+        'update': [ArticleOwnerAuthenticator],            
+        'partial_update': [ArticleOwnerAuthenticator],    
+        'destroy': [ArticleOwnerAuthenticator],           
     }
 
     filter_backends = [filters.OrderingFilter, django_filters.DjangoFilterBackend]
@@ -71,6 +71,20 @@ class ArticleViewSet(viewsets.ModelViewSet):
 class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
+    permission_classes_by_action = {
+        'list': [permissions.AllowAny],
+        'retrieve': [permissions.AllowAny],
+        'create': [permissions.IsAuthenticated],
+        'update': [ArticleOwnerAuthenticator],
+        'partial_update': [ArticleOwnerAuthenticator],
+        'destroy': [ArticleOwnerAuthenticator],
+    }
+    
+    def get_permissions(self):
+        try:
+            return [permission() for permission in self.permission_classes_by_action[self.action]]
+        except KeyError:
+            return [permission() for permission in self.permission_classes_by_action['create']]
 
 class ArticleExport(ArticleViewSet):
     def list(self, request):
@@ -108,74 +122,74 @@ class ArticleExport(ArticleViewSet):
         return response 
 
 
-@api_view(['PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def article_detail(request, pk):
-    try:
-        article = Article.objects.get(pk=pk)
-    except Article.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    # Check if the requesting user is the owner of the article
-    if article.author != request.user:
-        return Response({"message": "You are not authorized to perform this action."}, status=status.HTTP_403_FORBIDDEN)
-
-    if request.method == 'PUT':
-        serializer = ArticleSerializer(article, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        article.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_comment(request, article_id):
-    try:
-        article = Article.objects.get(pk=article_id)
-    except Article.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    serializer = CommentSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save(user=request.user, article=article)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-@api_view(['GET'])
-def list_comments(request, article_id):
-    try:
-        article = Article.objects.get(pk=article_id)
-    except Article.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    comments = Comment.objects.filter(article=article)
-    serializer = CommentSerializer(comments, many=True)
-    return Response(serializer.data)
-
-@api_view(['PUT', 'DELETE'])
-@permission_classes([IsAuthenticated])
-def comment_detail(request, comment_id):
-    try:
-        comment = Comment.objects.get(pk=comment_id)
-    except Comment.DoesNotExist:
-        return Response(status=status.HTTP_404_NOT_FOUND)
-
-    #    Check if the requesting user is the owner of the comment
-    if comment.user != request.user:
-        return Response({"message": "You are not authorized to perform this action."}, status=status.HTTP_403_FORBIDDEN)
-
-    if request.method == 'PUT':
-        serializer = CommentSerializer(comment, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    elif request.method == 'DELETE':
-        comment.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+#@api_view(['PUT', 'DELETE'])
+#@permission_classes([IsAuthenticated])
+#def article_detail(request, pk):
+#    try:
+#        article = Article.objects.get(pk=pk)
+#    except Article.DoesNotExist:
+#        return Response(status=status.HTTP_404_NOT_FOUND)
+#
+#    # Check if the requesting user is the owner of the article
+#    if article.author != request.user:
+#        return Response({"message": "You are not authorized to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+#
+#    if request.method == 'PUT':
+#        serializer = ArticleSerializer(article, data=request.data)
+#        if serializer.is_valid():
+#            serializer.save()
+#            return Response(serializer.data)
+#        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#    elif request.method == 'DELETE':
+#        article.delete()
+#        return Response(status=status.HTTP_204_NO_CONTENT)
+#
+#
+#@api_view(['POST'])
+#@permission_classes([IsAuthenticated])
+#def create_comment(request, article_id):
+#    try:
+#        article = Article.objects.get(pk=article_id)
+#    except Article.DoesNotExist:
+#        return Response(status=status.HTTP_404_NOT_FOUND)
+#
+#    serializer = CommentSerializer(data=request.data)
+#    if serializer.is_valid():
+#        serializer.save(user=request.user, article=article)
+#        return Response(serializer.data, status=status.HTTP_201_CREATED)
+#    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#@api_view(['GET'])
+#def list_comments(request, article_id):
+#    try:
+#        article = Article.objects.get(pk=article_id)
+#    except Article.DoesNotExist:
+#        return Response(status=status.HTTP_404_NOT_FOUND)
+#
+#    comments = Comment.objects.filter(article=article)
+#    serializer = CommentSerializer(comments, many=True)
+#    return Response(serializer.data)
+#
+#@api_view(['PUT', 'DELETE'])
+#@permission_classes([IsAuthenticated])
+#def comment_detail(request, comment_id):
+#    try:
+#        comment = Comment.objects.get(pk=comment_id)
+#    except Comment.DoesNotExist:
+#        return Response(status=status.HTTP_404_NOT_FOUND)
+#
+#    #    Check if the requesting user is the owner of the comment
+#    if comment.user != request.user:
+#        return Response({"message": "You are not authorized to perform this action."}, status=status.HTTP_403_FORBIDDEN)
+#
+#    if request.method == 'PUT':
+#        serializer = CommentSerializer(comment, data=request.data)
+#        if serializer.is_valid():
+#            serializer.save()
+#            return Response(serializer.data)
+#        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#
+#    elif request.method == 'DELETE':
+#        comment.delete()
+#        return Response(status=status.HTTP_204_NO_CONTENT)
