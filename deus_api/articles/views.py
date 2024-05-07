@@ -68,24 +68,32 @@ class ArticleViewSet(viewsets.ModelViewSet):
             return [permission() for permission in self.permission_classes_by_action[self.action]]
         except KeyError:
             return [permission() for permission in self.permission_classes_by_action['create']]
-
-class CommentViewSet(viewsets.ModelViewSet):
-    queryset = Comment.objects.all()
-    serializer_class = CommentSerializer
-    permission_classes_by_action = {
-        'list': [permissions.IsAuthenticated],
-        'retrieve': [permissions.AllowAny],
-        'create': [permissions.IsAuthenticated],
-        'update': [OwnerAuthenticator],
-        'partial_update': [OwnerAuthenticator],
-        'destroy': [OwnerAuthenticator],
-    }
     
-    def get_permissions(self):
-        try:
-            return [permission() for permission in self.permission_classes_by_action[self.action]]
-        except KeyError:
-            return [permission() for permission in self.permission_classes_by_action['create']]
+    def create(self, request, *args, **kwargs):
+        request.data['user_id'] = request.user.id  # Assign the ID of the current user to 'user_id'
+        response = super().create(request, *args, **kwargs)
+        return response
+
+
+
+class CommentViewSet(ArticleViewSet):
+    # queryset = Comment.objects.all()
+    # serializer_class = CommentSerializer
+    # permission_classes_by_action = {
+    #     'list': [permissions.IsAuthenticated],
+    #     'retrieve': [permissions.AllowAny],
+    #     'create': [permissions.IsAuthenticated],
+    #     'update': [OwnerAuthenticator],
+    #     'partial_update': [OwnerAuthenticator],
+    #     'destroy': [OwnerAuthenticator],
+    # }
+    
+    # def get_permissions(self):
+    #     try:
+    #         return [permission() for permission in self.permission_classes_by_action[self.action]]
+    #     except KeyError:
+    #         return [permission() for permission in self.permission_classes_by_action['create']]
+
 
 class ArticleExport(ArticleViewSet):
     def list(self, request):
