@@ -40,7 +40,7 @@ class CustomPagination(PageNumberPagination):
     page_size = 100
     page_size_query_param = 'page_size'
 
-class ArticleOwnerAuthenticator(permissions.BasePermission):
+class OwnerAuthenticator(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
         if request.method in permissions.SAFE_METHODS:
             return True
@@ -51,11 +51,12 @@ class ArticleViewSet(viewsets.ModelViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     permission_classes_by_action = {
+        'list':[permissions.IsAuthenticated],
         'create': [permissions.AllowAny], 
-        'retrieve': [permissions.AllowAny],
-        'update': [ArticleOwnerAuthenticator],            
-        'partial_update': [ArticleOwnerAuthenticator],    
-        'destroy': [ArticleOwnerAuthenticator],           
+        'retrieve': [permissions.IsAuthenticated],
+        'update': [OwnerAuthenticator],            
+        'partial_update': [OwnerAuthenticator],    
+        'destroy': [OwnerAuthenticator],           
     }
 
     filter_backends = [filters.OrderingFilter, django_filters.DjangoFilterBackend]
@@ -72,12 +73,12 @@ class CommentViewSet(viewsets.ModelViewSet):
     queryset = Comment.objects.all()
     serializer_class = CommentSerializer
     permission_classes_by_action = {
-        'list': [permissions.AllowAny],
+        'list': [permissions.IsAuthenticated],
         'retrieve': [permissions.AllowAny],
         'create': [permissions.IsAuthenticated],
-        'update': [ArticleOwnerAuthenticator],
-        'partial_update': [ArticleOwnerAuthenticator],
-        'destroy': [ArticleOwnerAuthenticator],
+        'update': [OwnerAuthenticator],
+        'partial_update': [OwnerAuthenticator],
+        'destroy': [OwnerAuthenticator],
     }
     
     def get_permissions(self):
