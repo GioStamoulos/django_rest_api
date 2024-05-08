@@ -12,12 +12,31 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework import status, permissions
 from rest_framework.response import Response
 
+class CustomPagination(PageNumberPagination):
+    page_size = 100
+    page_size_query_param = 'page_size'
 
-class AuthorViewSet(viewsets.ModelViewSet):
+class CommonViewSet(viewsets.ModelViewSet):
+    permission_classes_by_action = {
+        'list':[permissions.IsAuthenticated],
+        'create': [permissions.IsAuthenticated], 
+        'retrieve': [permissions.IsAuthenticated],
+        'update': [permissions.IsAuthenticated],            
+        'partial_update': [permissions.IsAuthenticated],    
+        'destroy': [permissions.IsAuthenticated],           
+    }
+    def get_permissions(self):
+        try:
+            return [permission() for permission in self.permission_classes_by_action[self.action]]
+        except KeyError:
+            return False
+    pagination_class = CustomPagination
+
+class AuthorViewSet(CommonViewSet):
     queryset = Author.objects.all()
     serializer_class = AuthorSerializer
 
-class TagViewSet(viewsets.ModelViewSet):
+class TagViewSet(CommonViewSet):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer
 
@@ -36,9 +55,6 @@ class ArticleFilter(django_filters.FilterSet):
         model = Article
         fields = ['year', 'month', 'authors', 'tags', 'keywords']
 
-class CustomPagination(PageNumberPagination):
-    page_size = 100
-    page_size_query_param = 'page_size'
 
 class OwnerAuthenticator(permissions.BasePermission):
     def has_object_permission(self, request, view, obj):
@@ -47,7 +63,7 @@ class OwnerAuthenticator(permissions.BasePermission):
         
         return obj.user_id == request.user
 
-class ArticleViewSet(viewsets.ModelViewSet):
+class ArticleViewSet(CommonViewSet):
     queryset = Article.objects.all()
     serializer_class = ArticleSerializer
     permission_classes_by_action = {
@@ -61,38 +77,31 @@ class ArticleViewSet(viewsets.ModelViewSet):
 
     filter_backends = [filters.OrderingFilter, django_filters.DjangoFilterBackend]
     filterset_class = ArticleFilter
-    pagination_class = CustomPagination
 
-    def get_permissions(self):
-        try:
-            return [permission() for permission in self.permission_classes_by_action[self.action]]
-        except KeyError:
-            return [permission() for permission in self.permission_classes_by_action['create']]
-    
+       
     def create(self, request, *args, **kwargs):
-        request.data['user_id'] = request.user.id  # Assign the ID of the current user to 'user_id'
+        request.data['user_id'] = request.user.id 
         response = super().create(request, *args, **kwargs)
         return response
 
 
+class CommentViewSet(CommonViewSet):
+    queryset = Comment.objects.all()
+    serializer_class = CommentSerializer 
+    permission_classes_by_action = {
+        'list':[permissions.IsAuthenticated],
+        'create': [permissions.AllowAny], 
+        'retrieve': [permissions.IsAuthenticated],
+        'update': [OwnerAuthenticator],            
+        'partial_update': [OwnerAuthenticator],    
+        'destroy': [OwnerAuthenticator],           
+    }
+       
+    def create(self, request, *args, **kwargs):
+        request.data['user_id'] = request.user.id 
+        response = super().create(request, *args, **kwargs)
+        return response
 
-class CommentViewSet(ArticleViewSet):
-    # queryset = Comment.objects.all()
-    # serializer_class = CommentSerializer
-    # permission_classes_by_action = {
-    #     'list': [permissions.IsAuthenticated],
-    #     'retrieve': [permissions.AllowAny],
-    #     'create': [permissions.IsAuthenticated],
-    #     'update': [OwnerAuthenticator],
-    #     'partial_update': [OwnerAuthenticator],
-    #     'destroy': [OwnerAuthenticator],
-    # }
-    
-    # def get_permissions(self):
-    #     try:
-    #         return [permission() for permission in self.permission_classes_by_action[self.action]]
-    #     except KeyError:
-    #         return [permission() for permission in self.permission_classes_by_action['create']]
 
 
 class ArticleExport(ArticleViewSet):
@@ -130,75 +139,3 @@ class ArticleExport(ArticleViewSet):
 
         return response 
 
-
-#@api_view(['PUT', 'DELETE'])
-#@permission_classes([IsAuthenticated])
-#def article_detail(request, pk):
-#    try:
-#        article = Article.objects.get(pk=pk)
-#    except Article.DoesNotExist:
-#        return Response(status=status.HTTP_404_NOT_FOUND)
-#
-#    # Check if the requesting user is the owner of the article
-#    if article.author != request.user:
-#        return Response({"message": "You are not authorized to perform this action."}, status=status.HTTP_403_FORBIDDEN)
-#
-#    if request.method == 'PUT':
-#        serializer = ArticleSerializer(article, data=request.data)
-#        if serializer.is_valid():
-#            serializer.save()
-#            return Response(serializer.data)
-#        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#
-#    elif request.method == 'DELETE':
-#        article.delete()
-#        return Response(status=status.HTTP_204_NO_CONTENT)
-#
-#
-#@api_view(['POST'])
-#@permission_classes([IsAuthenticated])
-#def create_comment(request, article_id):
-#    try:
-#        article = Article.objects.get(pk=article_id)
-#    except Article.DoesNotExist:
-#        return Response(status=status.HTTP_404_NOT_FOUND)
-#
-#    serializer = CommentSerializer(data=request.data)
-#    if serializer.is_valid():
-#        serializer.save(user=request.user, article=article)
-#        return Response(serializer.data, status=status.HTTP_201_CREATED)
-#    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#
-#@api_view(['GET'])
-#def list_comments(request, article_id):
-#    try:
-#        article = Article.objects.get(pk=article_id)
-#    except Article.DoesNotExist:
-#        return Response(status=status.HTTP_404_NOT_FOUND)
-#
-#    comments = Comment.objects.filter(article=article)
-#    serializer = CommentSerializer(comments, many=True)
-#    return Response(serializer.data)
-#
-#@api_view(['PUT', 'DELETE'])
-#@permission_classes([IsAuthenticated])
-#def comment_detail(request, comment_id):
-#    try:
-#        comment = Comment.objects.get(pk=comment_id)
-#    except Comment.DoesNotExist:
-#        return Response(status=status.HTTP_404_NOT_FOUND)
-#
-#    #    Check if the requesting user is the owner of the comment
-#    if comment.user != request.user:
-#        return Response({"message": "You are not authorized to perform this action."}, status=status.HTTP_403_FORBIDDEN)
-#
-#    if request.method == 'PUT':
-#        serializer = CommentSerializer(comment, data=request.data)
-#        if serializer.is_valid():
-#            serializer.save()
-#            return Response(serializer.data)
-#        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-#
-#    elif request.method == 'DELETE':
-#        comment.delete()
-#        return Response(status=status.HTTP_204_NO_CONTENT)
