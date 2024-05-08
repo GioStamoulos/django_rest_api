@@ -9,9 +9,13 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
 
         fake = Faker()
-        tags = [Tag.objects.create(name=fake.word()) for _ in range(300)]
-        authors = [Author.objects.create(name=fake.name(), email=fake.email()) for _ in range(250)]
-        users = [User.objects.create_user(username=fake.user_name(), email=fake.email()) for _ in range(50)]
+        tags = [Tag.objects.create(name=fake.word()) for _ in range(5)]
+        authors = [Author.objects.create(name=fake.name(), email=fake.email()) for _ in range(5)]
+        users = [User.objects.create_user(username=fake.user_name(), email=fake.email()) for _ in range(5)]
+        #known user with name:george pass 123 
+        users.append(User.objects.create_user(username='george', email='george@example.com', password='123'))
+
+
         for _ in range(500):
             title = fake.sentence()
             abstract = fake.paragraph()
@@ -19,7 +23,8 @@ class Command(BaseCommand):
             author = random.choice(authors)
             tags_for_article = random.sample(tags, k=random.randint(1, 5))
             user = random.choice(users)
-            article = Article.objects.create(title=title, abstract=abstract, publication_date=publication_date, user=user)
+            article = Article.objects.create(title=title, abstract=abstract, publication_date=publication_date)
+            article.user  = user
             article.authors.add(author)
             article.tags.add(*tags_for_article)
 

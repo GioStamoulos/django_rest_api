@@ -61,7 +61,7 @@ class OwnerAuthenticator(permissions.BasePermission):
         if request.method in permissions.SAFE_METHODS:
             return True
         
-        return obj.user_id == request.user
+        return obj.user == request.user
 
 class ArticleViewSet(CommonViewSet):
     queryset = Article.objects.all()
@@ -80,7 +80,8 @@ class ArticleViewSet(CommonViewSet):
 
        
     def create(self, request, *args, **kwargs):
-        request.data['user_id'] = request.user.id 
+        if(not request.data['user']) :
+            request.data['user'] = request.user.id 
         response = super().create(request, *args, **kwargs)
         return response
 
@@ -98,7 +99,7 @@ class CommentViewSet(CommonViewSet):
     }
        
     def create(self, request, *args, **kwargs):
-        request.data['user_id'] = request.user.id 
+        request.data['user'] = request.user.id 
         response = super().create(request, *args, **kwargs)
         return response
 

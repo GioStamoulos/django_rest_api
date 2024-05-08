@@ -21,16 +21,16 @@ class Article(models.Model):
     authors = models.ManyToManyField(Author, related_name='articles')
     tags = models.ManyToManyField(Tag, related_name='articles')
     publication_date = models.DateField()
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='articles')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='articles')
 
     def __str__(self):
         return self.title
 
 class Comment(models.Model):
     article = models.ForeignKey(Article, on_delete=models.CASCADE, related_name='comments')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
     text = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
-    user_id = models.ForeignKey(User, on_delete=models.CASCADE, related_name='comments')
 
     def __str__(self):
-        return f"Comment by {self.user_id} on {self.article}"
+        return f"Comment by {self.user} on {self.article}"
