@@ -22,7 +22,7 @@ class ArticleCommentTestCase(TestCase):
             title='Article Python',
             abstract='This is the first article',
             publication_date='2023-05-03',
-            user_id=self.user1
+            user=self.user1
         )
         self.article1.authors.set([self.author1])
         self.article1.tags.set([self.tag1])
@@ -31,20 +31,20 @@ class ArticleCommentTestCase(TestCase):
             title='Article Java',
             abstract='This is the second article',
             publication_date='2020-05-05',
-            user_id=self.user2
+            user=self.user2
         )
         self.article2.authors.set([self.author2])
         self.article2.tags.set([self.tag2])
 
         self.comment1 = Comment.objects.create(
             article=self.article1,
-            user_id=self.user1,
+            user=self.user1,
             text='This is a comment on Python Article'
         )
 
         self.comment2 = Comment.objects.create(
             article=self.article2,
-            user_id=self.user2,
+            user=self.user2,
             text='This is a comment on Java Article'
         )
         self.token = Token.objects.create(user=self.user1)

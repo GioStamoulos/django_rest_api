@@ -19,7 +19,6 @@ RUN sed -i 's/\r$//g' /usr/src/app/entrypoint.sh
 RUN chmod +x /usr/src/app/entrypoint.sh
 
 COPY . .
-
 # Expose port 8000 to the outside world
 EXPOSE 8000
 

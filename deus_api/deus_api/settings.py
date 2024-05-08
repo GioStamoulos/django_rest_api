@@ -82,18 +82,27 @@ WSGI_APPLICATION = 'deus_api.wsgi.application'
 load_dotenv()
 
 DATABASES = {
+    # 'default': {
+    #     'ENGINE': 'django.db.backends.postgresql',
+    #     # 'NAME': 'mydatabase', #os.getenv('DB_NAME'),
+    #     # 'USER': 'myuser',#os.getenv('DB_USER'),
+    #     # 'PASSWORD': 'mypassword',#os.getenv('DB_PASSWORD'),
+    #     # 'HOST': 'db',#os.getenv('DB_HOST'),
+    #     # 'PORT': 5432#os.getenv('DB_PORT'),
+    #     'NAME': '$DB_NAME',
+    #     'USER': '$DB_USER',
+    #     'PASSWORD': '$DB_PASSWORD',
+    #     'HOST': '$DB_HOST',
+    #     'PORT': '$DB_PORT',
+    # }
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'mydatabase', #os.getenv('DB_NAME'),
-        'USER': 'myuser',#os.getenv('DB_USER'),
-        'PASSWORD': 'mypassword',#os.getenv('DB_PASSWORD'),
-        'HOST': 'db',#os.getenv('DB_HOST'),
-        'PORT': 5432#os.getenv('DB_PORT'),
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
-#     'default': {
-#         'ENGINE': 'django.db.backends.sqlite3',
-#         'NAME': BASE_DIR / 'db.sqlite3',
-#     }
 }
 
 

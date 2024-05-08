@@ -23,8 +23,7 @@ class Command(BaseCommand):
             author = random.choice(authors)
             tags_for_article = random.sample(tags, k=random.randint(1, 5))
             user = random.choice(users)
-            article = Article.objects.create(title=title, abstract=abstract, publication_date=publication_date)
-            article.user  = user
+            article = Article.objects.create(title=title, abstract=abstract, publication_date=publication_date, user=user)
             article.authors.add(author)
             article.tags.add(*tags_for_article)
 

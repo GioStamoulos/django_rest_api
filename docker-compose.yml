@@ -1,11 +1,11 @@
-version: '3'
+version: '3.2'
 
 services:
   web:
-    build: ./deus_api
+    build: ./deus_api 
     command: python manage.py runserver 0.0.0.0:8000  
     volumes:
-      - - ./deus_api/:/usr/src/app/
+       - ./deus_api/:/usr/src/app/
     ports:
       - "8000:8000"
     env_file:
@@ -14,12 +14,12 @@ services:
       - db
   db:
     image: postgres
-     volumes:
+    volumes:
       - postgres_data:/var/lib/postgresql/data/
     environment:
-      POSTGRES_DB: mydatabase
-      POSTGRES_USER: myuser
-      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
 
-  volumes:
+volumes:
   postgres_data:
